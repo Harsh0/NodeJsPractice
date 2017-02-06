@@ -1,0 +1,14 @@
+{
+  "name": "enigma",
+  "version": "1.0.0",
+  "description": "enigma helps you to encrypt and decrypt ur text string",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Harsh0",
+  "license": "ISC",
+  "dependencies": {
+    "qr-image": "^3.2.0"
+  }
+}

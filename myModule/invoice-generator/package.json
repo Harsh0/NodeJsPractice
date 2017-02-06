@@ -1,0 +1,14 @@
+{
+  "name": "invoice-generator",
+  "version": "1.0.0",
+  "description": "Generate invoice for your business",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Harsh",
+  "license": "ISC",
+  "dependencies": {
+    "pdf-invoice": "^1.0.2"
+  }
+}
