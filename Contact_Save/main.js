@@ -1,5 +1,46 @@
 //controller functions
 var interval;
+function ajax(config){
+			this.method = config.method || 'GET';
+			this.payload = config.payload || null;
+			var xhr = new XMLHttpRequest();
+			xhr.open(this.method, config.url, true);
+      if(this.method=="POST"){
+        xhr.setRequestHeader("Content-Type","application/json");
+      }
+			xhr.addEventListener("load", function(){
+				config.success(xhr);
+			});
+			xhr.addEventListener("error", config.error);
+			xhr.send(this.payload);
+}
+function getData(){
+    ajax({
+      url:'/getdata',
+      success:function(xhr){
+        localStorage.setItem('business',xhr.response);
+        renderPage();
+      },
+      error:function(err){
+        setTimeout(getData,10000);
+      }
+    })
+}
+function pushData(data,cb){
+  //push data to data base if connection lost send error otherwise updated data
+  ajax({
+    method:'POST',
+    payload:JSON.stringify(data),
+    url:'/pushdata',
+    success:function(xhr){
+      console.log(xhr.response);
+      cb(null,JSON.parse(xhr.response));
+    },
+    error:function(err){
+      cb(err);
+    }
+  })
+}
 function sync(){
   //get the data and sync if connection is not there poll it to evergy 30 seconds and save in interval variable
   if(interval){
@@ -14,38 +55,39 @@ function sync(){
         unsentData.push(data[i]);
       }
     }
-    var dataPushed = function(err,dbData){
-      if(err){
-        interval = setTimeout(function(){
-          pushData(unsentData,dataPushed)
-        },30000);
-      }else{
-        var syncedData = []
-        for(var i=0;i<data.length;i++){
-          if(data[i]["_id"]){
-            syncedData.push(data[i]);
+    if(unsentData.length){
+      var dataPushed = function(err,dbData){
+        if(err){
+          interval = setTimeout(function(){
+            pushData(unsentData,dataPushed)
+          },30000);
+        }else{
+          var syncedData = []
+          for(var i=0;i<data.length;i++){
+            if(data[i]["_id"]){
+              syncedData.push(data[i]);
+            }
           }
+          syncedData = syncedData.concat(dbData);
+          localStorage.setItem('business',JSON.stringify(syncedData));
+          alert('data synced to database');
         }
-        syncedData = syncedData.concat(dbData);
-        localStorage.setItem('business',JSON.stringify(syncedData));
-        alert('data synced to database');
       }
+      pushData(unsentData,dataPushed);
+    }else{
+      getData();
     }
-    pushData(unsentData,dataPushed);
   }
 }
-function pushData(data,cb){
-  //push data to data base if connection lost send error otherwise updated data
-  cb(data);
-}
-// sync();
-renderPage();
 function saveLocalStorage(data){
   var d = localStorage.getItem('business');
   if(d){
     d = JSON.parse(d);
     var temp = d.find(function(e){
       for(k in e){
+          if(k=="_id"){
+            continue;
+          }
           if(e[k]!=data[k]){
             return false;
           }
@@ -104,6 +146,9 @@ function renderPage(){
     var row = table.insertRow(+i+1);
     var j=0;
     for(var k in data[i]){
+      if(k=="_id"){
+        continue;
+      }
       var cell = row.insertCell(j);
       cell.innerHTML = data[i][k];
       j++;
@@ -129,3 +174,5 @@ var catArray = data.category.map(function(e){
 fillData('natureList',data.nature);
 fillData('catList',catArray);
 fillData('subCatList',data.category[0].sub);
+sync();
+renderPage();
