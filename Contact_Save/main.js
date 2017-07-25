@@ -77,6 +77,8 @@ function sync(){
     }else{
       getData();
     }
+  }else{
+    getData();
   }
 }
 function saveLocalStorage(data){
