@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Store Your Local Data</title>
+    <script type="text/javascript">
+      data = {
+        "nature":[
+          "Wholeseller",
+          "Retailer",
+          "Manufacturer",
+          "Customer"
+        ],
+        "category":[
+          {
+            "name":"Cloth",
+            "sub":[
+              "Jeans",
+              "Shirt",
+              "Cushion Cover",
+              "Saree"
+            ]
+          },
+          {
+            "name":"Copper",
+            "sub":[
+              "Sub1",
+              "Sub2"
+            ]
+          }
+        ]
+      };
+    </script>
+    <style media="screen">
+      .form{
+        border-color:black;
+      }
+      span{
+        font-weight: bold;
+        width:10vw;
+      }
+      input[type="text"], textarea{
+        border-width:1px;
+        border-color: black;
+      }
+      table {
+        width:100%;
+      }
+      table, th, td {
+          border: 1px solid black;
+          border-collapse: collapse;
+      }
+      th, td {
+          padding: 5px;
+          text-align: left;
+      }
+      table tr:nth-child(even) {
+        background-color: #eee;
+      }
+      table tr:nth-child(odd) {
+         background-color:#fff;
+      }
+      table th {
+          background-color: black;
+          color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form">
+      <span>Nature :</span>
+      <select id="natureList"></select><br/><br/>
+      <span>Category :</span>
+      <select id="catList" onchange="catChange()"></select><br/><br/>
+      <span>Sub Category :</span>
+      <select id="subCatList"></select><br/><br/>
+      <span>Vendor Name :</span>
+      <input type="text" id="vendorName" value=""><br/><br/>
+      <span>Firm Name :</span>
+      <input type="text" id="firmName" value=""><br/><br/>
+      <span>Customer Name :</span>
+      <input type="text" id="custName" value=""><br/><br/>
+      <span>Address :</span>
+      <textarea id="address" rows="3"></textarea><br/><br/>
+      <span>Mobile :</span>
+      <input type="text" id="mobile"><br/><br/>
+      <input type="button" id="submit" onclick="submit()" value="submit">
+    </div>
+    <br/>
+    <table id="showTable">
+      <tr>
+        <th>Nature</th>
+        <th>Category</th>
+        <th>Sub Category</th>
+        <th>Vendor Name</th>
+        <th>Firm Name</th>
+        <th>Customer Name</th>
+        <th>Address</th>
+        <th>Mobile</th>
+      </tr>
+      <!-- <tr>
+        <td>hi</td>
+      </tr>
+      <tr>
+        <td>hello</td>
+      </tr> -->
+    </table>
+    <script src="/main.js" charset="utf-8"></script>
+  </body>
+</html>

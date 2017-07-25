@@ -1,0 +1,26 @@
+{
+  "nature":[
+    "wholesaler",
+    "retailer",
+    "manufacturer",
+    "customer"
+  ],
+  "category":[
+    {
+      "name":"cloth",
+      "sub":[
+        "jeans",
+        "shirt",
+        "cushion cover",
+        "saree"
+      ]
+    },
+    {
+      "name":"copper",
+      "sub":[
+        "sub1",
+        "sub2"
+      ]
+    }
+  ]
+}
