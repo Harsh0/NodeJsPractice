@@ -18,8 +18,12 @@ function getData(){
     ajax({
       url:'/getdata',
       success:function(xhr){
-        localStorage.setItem('business',xhr.response);
-        renderPage();
+        if(xhr.status==200){
+            localStorage.setItem('business',xhr.response);
+            renderPage();
+        }else{
+            alert("Server error!");
+        }
       },
       error:function(err){
         setTimeout(getData,10000);
@@ -33,8 +37,11 @@ function pushData(data,cb){
     payload:JSON.stringify(data),
     url:'/pushdata',
     success:function(xhr){
-      console.log(xhr.response);
-      cb(null,JSON.parse(xhr.response));
+        if(xhr.status==200){
+            cb(null,JSON.parse(xhr.response));
+        }else{
+            alert("Server error!!");
+        }
     },
     error:function(err){
       cb(err);
@@ -46,7 +53,7 @@ function sync(){
   if(interval){
     clearInterval(interval);
   }
-  data = localStorage.getItem('business');
+  var data = localStorage.getItem('business');
   if(data){
     data = JSON.parse(data);
     var unsentData = [];
@@ -70,7 +77,7 @@ function sync(){
           }
           syncedData = syncedData.concat(dbData);
           localStorage.setItem('business',JSON.stringify(syncedData));
-          alert('data synced to database');
+//          alert('data synced to database');
         }
       }
       pushData(unsentData,dataPushed);
@@ -105,8 +112,8 @@ function saveLocalStorage(data){
     d = [data];
   }
   localStorage.setItem('business',JSON.stringify(d));
-  alert('data saved sucessfully');
   renderPage();
+//  alert('data saved sucessfully');
   sync();
 }
 
@@ -144,7 +151,6 @@ function renderPage(){
   }
   //add rows to table
   for(var i in data){
-    console.log(i);
     var row = table.insertRow(+i+1);
     var j=0;
     for(var k in data[i]){
@@ -155,7 +161,37 @@ function renderPage(){
       cell.innerHTML = data[i][k];
       j++;
     }
+    var cell = row.insertCell(j);
+    cell.innerHTML = "<a id='delete' href='javascript:deleteRow("+i+")' >Delete</a>";
   }
+}
+function deleteRow(i){
+    var flag = confirm("Are you sure, you want to delete row "+(i+1));
+    var data = localStorage.getItem('business');
+    data = JSON.parse(data);
+    var row = data.splice(i,1)[0];
+    localStorage.setItem('business',JSON.stringify(data));
+    if(flag){
+        if(row["_id"]){
+            ajax({
+                method:'POST',
+                payload:JSON.stringify({_id:row["_id"]}),
+                url:'/deletedata',
+                success:function(xhr){
+                    if(xhr.status==200){
+                        renderPage();
+                    }else{
+                        alert('Server Error');
+                    }
+                },
+                error:function(){
+                    alert('Some error Occured');
+                }
+            });
+        }else{
+            renderPage();
+        }
+    }
 }
 function submit(){
   var obj = {

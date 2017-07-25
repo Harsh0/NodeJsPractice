@@ -3,6 +3,7 @@ const fs = require('fs');
 const mongo = require('mongodb');
 const port = process.argv[2]||80;
 const mongourl = "";
+var ObjectID = mongo.ObjectID;
 var MongoClient = mongo.MongoClient;
 var db;
 let connectMongo = ()=>{
@@ -33,8 +34,9 @@ http.createServer((req,res)=>{
     let c = db.collection('business');
     c.find({}).toArray((err,docs)=>{
       if(err){
-        res.writeHead(500,{'Content-Type':'text/plain'})
-        res.end("Internal Server Error")
+        console.log(err);
+        res.writeHead(500,{'Content-Type':'application/json'})
+        res.end(JSON.stringify({message:"Internal Server Error"}));
       }else{
         res.writeHead(200,{'Content-Type':'application/json'});
         res.end(JSON.stringify(docs));
@@ -50,14 +52,33 @@ http.createServer((req,res)=>{
       data = JSON.parse(data);
       c.insertMany(data,(err,docs)=>{
         if(err){
-          res.writeHead(500,{'Content-Type':'text/plain'})
-          res.end("Internal Server Error")
+          res.writeHead(500,{'Content-Type':'application/json'})
+          res.end(JSON.stringify({message:"Internal Server Error"}));
         }else{
           res.writeHead(200,{'Content-Type':'application/json'});
           res.end(JSON.stringify(docs.ops));
         }
       })
     })
+  }else if(req.url.indexOf('/deletedata')>-1){
+    let c = db.collection('business');
+    var data ="";
+    req.on('data',(d)=>{
+      data += d;
+    })
+    req.on('end',()=>{
+      data = JSON.parse(data);
+      c.deleteOne({_id:ObjectID(data._id)},(err,docs)=>{
+        if(err){
+            console.log(err);
+          res.writeHead(500,{'Content-Type':'application/json'})
+          res.end(JSON.stringify({message:"Internal Server Error"}));
+        }else{
+          res.writeHead(200,{'Content-Type':'application/json'});
+          res.end(JSON.stringify(docs.result));
+        }
+      })
+    });
   }else{
     res.writeHead(404,{'Content-Type':'text/plain'});
     res.end('Not Found');
