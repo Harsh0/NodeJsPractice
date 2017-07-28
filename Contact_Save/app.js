@@ -1,8 +1,9 @@
+var mongourl = process.env.MONGO_URL||"mongodb://localhost:27017/databaseName";
 const http = require('http');
 const fs = require('fs');
 const mongo = require('mongodb');
+const path = require('path');
 const port = process.argv[2]||80;
-const mongourl = "";
 var ObjectID = mongo.ObjectID;
 var MongoClient = mongo.MongoClient;
 var db;
@@ -22,15 +23,15 @@ http.createServer((req,res)=>{
   if(['/','/main.js'].indexOf(req.url)>-1){
     if(req.url=='/main.js'){
       res.writeHead(200,{'Content-Type':'text/javascript'});
-      let rs = fs.createReadStream('main.js');
+      let rs = fs.createReadStream(path.join('firebase','public','main.js'));
       rs.pipe(res);
       return;
     }
     res.writeHead(200,{'Content-Type':'text/html'});
-    let rs = fs.createReadStream('index.html');
+    let rs = fs.createReadStream(path.join('firebase','public','index.html'));
     rs.pipe(res);
     return;
-  }else if(req.url=='/getdata'){
+  }else if(req.url=='/getData'){
     let c = db.collection('business');
     c.find({}).toArray((err,docs)=>{
       if(err){
@@ -42,7 +43,7 @@ http.createServer((req,res)=>{
         res.end(JSON.stringify(docs));
       }
     })
-  }else if(req.url=='/pushdata'){
+  }else if(req.url=='/pushData'){
     let c = db.collection('business');
     var data ="";
     req.on('data',(d)=>{
@@ -60,7 +61,7 @@ http.createServer((req,res)=>{
         }
       })
     })
-  }else if(req.url.indexOf('/deletedata')>-1){
+  }else if(req.url=='/deleteData'){
     let c = db.collection('business');
     var data ="";
     req.on('data',(d)=>{
@@ -79,6 +80,8 @@ http.createServer((req,res)=>{
         }
       })
     });
+  }else if(req.url=='/updateData'){
+
   }else{
     res.writeHead(404,{'Content-Type':'text/plain'});
     res.end('Not Found');

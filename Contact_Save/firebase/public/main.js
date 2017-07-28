@@ -1,5 +1,6 @@
 //controller functions
 var interval;
+var apiUrl = "";
 function ajax(config){
 			this.method = config.method || 'GET';
 			this.payload = config.payload || null;
@@ -16,7 +17,7 @@ function ajax(config){
 }
 function getData(){
     ajax({
-      url:'/getdata',
+      url:apiUrl+'/getData',
       success:function(xhr){
         if(xhr.status==200){
             localStorage.setItem('business',xhr.response);
@@ -35,7 +36,7 @@ function pushData(data,cb){
   ajax({
     method:'POST',
     payload:JSON.stringify(data),
-    url:'/pushdata',
+    url:apiUrl+'/pushData',
     success:function(xhr){
         if(xhr.status==200){
             cb(null,JSON.parse(xhr.response));
@@ -176,7 +177,7 @@ function deleteRow(i){
             ajax({
                 method:'POST',
                 payload:JSON.stringify({_id:row["_id"]}),
-                url:'/deletedata',
+                url:apiUrl+'/deleteData',
                 success:function(xhr){
                     if(xhr.status==200){
                         renderPage();
