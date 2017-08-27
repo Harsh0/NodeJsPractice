@@ -1,6 +1,8 @@
 //controller functions
 var interval;
+// var apiUrl = "https://wt-3e2065a708fccb555d9d503914e3c909-0.run.webtask.io";
 var apiUrl = "";
+var currRow;
 function ajax(config){
 			this.method = config.method || 'GET';
 			this.payload = config.payload || null;
@@ -62,6 +64,9 @@ function sync(){
       if(!data[i]["_id"]){
         unsentData.push(data[i]);
       }
+			if(data[i]["unsync"]){
+				unsentData.push(data[i])
+			}
     }
     if(unsentData.length){
       var dataPushed = function(err,dbData){
@@ -72,7 +77,7 @@ function sync(){
         }else{
           var syncedData = []
           for(var i=0;i<data.length;i++){
-            if(data[i]["_id"]){
+            if(data[i]["_id"]&&(!data[i]["unsync"])){
               syncedData.push(data[i]);
             }
           }
@@ -155,16 +160,68 @@ function renderPage(){
     var row = table.insertRow(+i+1);
     var j=0;
     for(var k in data[i]){
-      if(k=="_id"){
+      if(k=="_id"||k=="unsync"){
         continue;
       }
       var cell = row.insertCell(j);
       cell.innerHTML = data[i][k];
       j++;
     }
-    var cell = row.insertCell(j);
-    cell.innerHTML = "<a id='delete' href='javascript:deleteRow("+i+")' >Delete</a>";
+    cell = row.insertCell(j);
+    cell.innerHTML = "<a href='javascript:deleteRow("+i+")' >Delete</a>";
+		j++;
+		cell = row.insertCell(j);
+		cell.innerHTML = "<a href='javascript:updateRow("+i+")' >Update</a>";
   }
+}
+function updateRow(i){
+	currRow = +i;
+	var data = JSON.parse(localStorage.getItem('business'));
+	//show update button hide submit button
+	document.getElementById('submit').hidden = true;
+	document.getElementById('update').hidden = false;
+	document.getElementById('cancelUpdate').hidden = false;
+	//put all data to text box
+	document.getElementById('natureList').value= data[currRow].nature;
+	document.getElementById('catList').value= data[currRow].category;
+	document.getElementById('subCatList').value = data[currRow].subCategory;
+	document.getElementById('vendorName').value= data[currRow].vendorName;
+	document.getElementById('firmName').value = data[currRow].firmName;
+	document.getElementById('custName').value = data[currRow].custName;
+	document.getElementById('address').value= data[currRow].address;
+	document.getElementById('mobile').value= data[currRow].mobile;
+}
+function clearData(){
+	document.getElementById('vendorName').value= "";
+	document.getElementById('firmName').value = "";
+	document.getElementById('custName').value = "";
+	document.getElementById('address').value= "";
+	document.getElementById('mobile').value= "";
+}
+function cancelUpdate(){
+	currRow= undefined;
+	document.getElementById('submit').hidden = false;
+	document.getElementById('update').hidden = true;
+	document.getElementById('cancelUpdate').hidden = true;
+	clearData();
+}
+function update(){
+	var data = JSON.parse(localStorage.getItem('business'));
+	if(data[currRow]["_id"]){
+		data[currRow]["unsync"] = true;
+	}
+	data[currRow].nature=document.getElementById('natureList').value;
+  data[currRow].category=document.getElementById('catList').value;
+  data[currRow].subCategory=document.getElementById('subCatList').value;
+  data[currRow].vendorName=document.getElementById('vendorName').value;
+  data[currRow].firmName=document.getElementById('firmName').value;
+  data[currRow].custName=document.getElementById('custName').value;
+  data[currRow].address=document.getElementById('address').value;
+  data[currRow].mobile=document.getElementById('mobile').value;
+	localStorage.setItem('business',JSON.stringify(data));
+	clearData();
+	renderPage();
+	sync();
 }
 function deleteRow(i){
     var flag = confirm("Are you sure, you want to delete row "+(i+1));
@@ -205,6 +262,7 @@ function submit(){
     address:document.getElementById('address').value,
     mobile:document.getElementById('mobile').value
   };
+	clearData();
   saveLocalStorage(obj);
 }
 var catArray = data.category.map(function(e){

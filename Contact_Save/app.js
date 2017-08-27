@@ -1,4 +1,5 @@
 var mongourl = process.env.MONGO_URL||"mongodb://localhost:27017/databaseName";
+var mongourl = "mongodb://Harsh:123@ds119788.mlab.com:19788/personal_details";
 const http = require('http');
 const fs = require('fs');
 const mongo = require('mongodb');
@@ -11,6 +12,7 @@ let connectMongo = ()=>{
   MongoClient.connect(mongourl,(err,database)=>{
     if(err){
         // try connecting again
+        console.log("Trying connecting again....");
         connectMongo();
     }else{
       db = database;
@@ -51,15 +53,35 @@ http.createServer((req,res)=>{
     })
     req.on('end',()=>{
       data = JSON.parse(data);
-      c.insertMany(data,(err,docs)=>{
-        if(err){
-          res.writeHead(500,{'Content-Type':'application/json'})
-          res.end(JSON.stringify({message:"Internal Server Error"}));
-        }else{
-          res.writeHead(200,{'Content-Type':'application/json'});
-          res.end(JSON.stringify(docs.ops));
+      //find update one
+      var upData = [];
+      for(var i in data){
+        if(data[i]["unsync"]){
+          upData.push(data.splice(i,1));
+          delete upData[upData.length-1]["unsync"];
         }
-      })
+      }
+      if(data.length){
+        c.insertMany(data,(err,docs)=>{
+          if(err){
+            console.log(err);
+            res.writeHead(500,{'Content-Type':'application/json'})
+            res.end(JSON.stringify({message:"Internal Server Error"}));
+          }else{
+            if(upData.length){
+              res.writeHead(200,{'Content-Type':'application/json'});
+              res.end(JSON.stringify(docs.ops));
+            }else{
+              res.writeHead(200,{'Content-Type':'application/json'});
+              res.end(JSON.stringify(docs.ops));
+            }
+          }
+        })
+      }else if(upData.length){
+        //
+        res.writeHead(200,{'Content-Type':'application/json'});
+        res.end(JSON.stringify([]));
+      }
     })
   }else if(req.url=='/deleteData'){
     let c = db.collection('business');
@@ -80,8 +102,6 @@ http.createServer((req,res)=>{
         }
       })
     });
-  }else if(req.url=='/updateData'){
-
   }else{
     res.writeHead(404,{'Content-Type':'text/plain'});
     res.end('Not Found');
@@ -97,3 +117,4 @@ process.on('SIGINT', () => {
     process.kill(0);
   })
 });
+// to deploy to firebase "firebase deploy -p public"
