@@ -1,15 +1,23 @@
 const _Promise = function(cb){
-	this.functionChain = [];
+	let a = {}
+	if(!(cb&&{}.toString.call(cb)=='[object Function]')){
+		throw new Error(`Promise resolve ${cb} is not a function`);
+	}
+	let temp = {};
+	temp.functionChain = [];
 	this.then = (successCallback)=>{
-		this.functionChain.push({type:'then',func:successCallback});
+		temp.functionChain.push({type:'then',func:successCallback});
 		return this;
 	};
 	this.catch = (errCallback)=>{
-		this.functionChain.push({type:'catch',func:errCallback});
+		temp.functionChain.push({type:'catch',func:errCallback});
 		return this;
 	};
-	this.resolve = (data)=>{
-		let funcChain = this.functionChain;
+	this.transferEventListeners = (functionChain)=>{
+		temp.functionChain = functionChain;
+	}
+	temp.resolve = (data)=>{
+		let funcChain = temp.functionChain;
 		for(let i=0;i<funcChain.length;i++){
 			if(funcChain[i].type=='then'){
 				try{
@@ -17,7 +25,7 @@ const _Promise = function(cb){
 					if(newPromOrData instanceof _Promise){
 						//promise has received
 						//put all other function to newpromise object
-						newPromOrData.functionChain = funcChain.slice(i+1);
+						newPromOrData.transferEventListeners(funcChain.slice(i+1));
 						process.nextTick(()=>{
 							delete this;//remove this promise;
 						})
@@ -30,38 +38,38 @@ const _Promise = function(cb){
 				}catch(err){
 					//call reject
 					process.nextTick(()=>{
-						this.reject(err);
+						temp.reject(err);
 					})
 					break;
 				}
 			}
 		}
 	};
-	this.reject = (err)=>{
+	temp.reject = (err)=>{
 		//find the first catch and execute and run other functions if available after that
-		let funcChain = this.functionChain;
+		let funcChain = temp.functionChain;
 		for(let i=0;i<funcChain.length;i++){
 			if(funcChain[i].type=='catch'){
 				try{
 					let newPromOrData = funcChain[i].func(err);
 					if(newPromOrData instanceof _Promise){
-						newPromOrData.functionChain = funcChain.slice(i+1);
+						newPromOrData.transferEventListeners(funcChain.slice(i+1));
 						process.nextTick(()=>{
 							delete this;
 						})
 						break;
 					}else{
-						this.functionChain = funcChain.slice(i+1);
+						temp.functionChain = funcChain.slice(i+1);
 						process.nextTick(()=>{
-							this.resolve(newPromOrData);
+							temp.resolve(newPromOrData);
 						})
 						break;
 					}
 				}catch(err){
 					//find other catch and execute
-					this.functionChain = funcChain.slice(i+1);
+					temp.functionChain = funcChain.slice(i+1);
 					process.nextTick(()=>{
-						this.reject(err);
+						temp.reject(err);
 					});
 					break;
 				}
@@ -70,9 +78,9 @@ const _Promise = function(cb){
 	}
 	process.nextTick(()=>{
 		try{
-			cb(this.resolve,this.reject);
+			cb(temp.resolve,temp.reject);
 		}catch(err){
-			this.reject(err);
+			temp.reject(err);
 		}
 	});
 }
