@@ -9,16 +9,14 @@ p
 .then((d)=>{
 	console.log(d);
 	return new Prom((resolve,reject)=>{
-		resolve("hello");
+		setTimeout(()=>{
+			reject("hello");
+		},1000);
 	})
 })
 .catch(err=>{
 	console.log('fist err',err);
-	return "error from first catch"
-})
-.then((d)=>{
-	console.log("third",d);
-})
-.catch(err=>{
-	console.log("error",err);
+	return new Prom((resolve,reject)=>{
+		resolve("hey");
+	})
 })

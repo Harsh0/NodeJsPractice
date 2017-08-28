@@ -18,6 +18,9 @@ const _Promise = function(cb){
 						//promise has received
 						//put all other function to newpromise object
 						newPromOrData.functionChain = funcChain.slice(i+1);
+						process.nextTick(()=>{
+							delete this;//remove this promise;
+						})
 						break;
 						//when the resolve or reject of new promise called functions will be fetched from this chain and executed
 					}else{
@@ -25,25 +28,11 @@ const _Promise = function(cb){
 						//in next iteration this data will be used to call next then
 					}
 				}catch(err){
-					//find first catch after i and execute
-					while(1){
-						if(funcChain[i+1]){
-							if(funcChain[i+1].type=='catch'){
-								//function found
-								//make new Prom and call the reject
-								let newProm = new _Promise((resolve,reject)=>{
-									reject(err);
-								});
-								newProm.functionChain = funcChain.slice(i+1);
-								funcChain = [];
-								break;
-							}else{
-								funcChain.splice(i+1,1);
-							}
-						}else{
-							break;
-						}
-					}
+					//call reject
+					process.nextTick(()=>{
+						this.reject(err);
+					})
+					break;
 				}
 			}
 		}
@@ -56,8 +45,10 @@ const _Promise = function(cb){
 				try{
 					let newPromOrData = funcChain[i].func(err);
 					if(newPromOrData instanceof _Promise){
-						funcChain = [];
 						newPromOrData.functionChain = funcChain.slice(i+1);
+						process.nextTick(()=>{
+							delete this;
+						})
 						break;
 					}else{
 						this.functionChain = funcChain.slice(i+1);
@@ -77,12 +68,11 @@ const _Promise = function(cb){
 			}
 		}
 	}
-	let self = this;
 	process.nextTick(()=>{
 		try{
-			cb(self.resolve,self.reject);
+			cb(this.resolve,this.reject);
 		}catch(err){
-			self.reject(err);
+			this.reject(err);
 		}
 	});
 }
