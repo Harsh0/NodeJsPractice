@@ -1,21 +1,42 @@
 //controller functions
 var interval;
-// var apiUrl = "https://wt-3e2065a708fccb555d9d503914e3c909-0.run.webtask.io";
-var apiUrl = "";
-var currRow;
+var countries;
+var apiUrl = "https://wt-3e2065a708fccb555d9d503914e3c909-0.run.webtask.io";
 function ajax(config){
-			this.method = config.method || 'GET';
-			this.payload = config.payload || null;
-			var xhr = new XMLHttpRequest();
-			xhr.open(this.method, config.url, true);
-      if(this.method=="POST"){
-        xhr.setRequestHeader("Content-Type","application/json");
-      }
-			xhr.addEventListener("load", function(){
-				config.success(xhr);
-			});
-			xhr.addEventListener("error", config.error);
-			xhr.send(this.payload);
+  this.method = config.method || 'GET';
+  this.payload = config.payload || null;
+  var xhr = new XMLHttpRequest();
+  xhr.open(this.method, config.url, true);
+  if(this.method=="POST"){
+    xhr.setRequestHeader("Content-Type","application/json");
+  }
+  xhr.addEventListener("load", function(){
+    config.success(xhr);
+  });
+  xhr.addEventListener("error", config.error);
+  xhr.send(this.payload);
+}
+function getAllCountry(cb){
+  ajax({
+    url:apiUrl+'/getCountries',
+    success:function(xhr){
+      cb(null,JSON.parse(xhr.response))
+    },
+    error:function(err){
+      cb(err);
+    }
+  })
+}
+function getStateOfCountry(countryCode,cb){
+  ajax({
+    url:apiUrl+'/getStates?country='+countryCode,
+    success:function(xhr){
+      cb(null,JSON.parse(xhr.response))
+    },
+    error:function(err){
+      cb(err);
+    }
+  })
 }
 function getData(){
     ajax({
@@ -64,9 +85,6 @@ function sync(){
       if(!data[i]["_id"]){
         unsentData.push(data[i]);
       }
-			if(data[i]["unsync"]){
-				unsentData.push(data[i])
-			}
     }
     if(unsentData.length){
       var dataPushed = function(err,dbData){
@@ -77,7 +95,7 @@ function sync(){
         }else{
           var syncedData = []
           for(var i=0;i<data.length;i++){
-            if(data[i]["_id"]&&(!data[i]["unsync"])){
+            if(data[i]["_id"]){
               syncedData.push(data[i]);
             }
           }
@@ -156,72 +174,36 @@ function renderPage(){
     table.deleteRow(1);
   }
   //add rows to table
+  var headerData = [
+    'country',
+    'state',
+    'nature',
+    'category',
+    'subCategory',
+    'firmName',
+    'vendorName',
+    'custName',
+    'address',
+    'mobile',
+    'email',
+    'whatsapp',
+    'website'
+  ];
   for(var i in data){
     var row = table.insertRow(+i+1);
     var j=0;
-    for(var k in data[i]){
-      if(k=="_id"||k=="unsync"){
-        continue;
-      }
+    for(var k in headerData){
+      // if(k=="_id"){
+      //   continue;
+      // }
+      console.log(data[i][headerData[k]]);
       var cell = row.insertCell(j);
-      cell.innerHTML = data[i][k];
+      cell.innerHTML = data[i][headerData[k]]||'-';
       j++;
     }
-    cell = row.insertCell(j);
-    cell.innerHTML = "<a href='javascript:deleteRow("+i+")' >Delete</a>";
-		j++;
-		cell = row.insertCell(j);
-		cell.innerHTML = "<a href='javascript:updateRow("+i+")' >Update</a>";
+    var cell = row.insertCell(j);
+    cell.innerHTML = "<a id='delete' href='javascript:deleteRow("+i+")' >Delete</a>";
   }
-}
-function updateRow(i){
-	currRow = +i;
-	var data = JSON.parse(localStorage.getItem('business'));
-	//show update button hide submit button
-	document.getElementById('submit').hidden = true;
-	document.getElementById('update').hidden = false;
-	document.getElementById('cancelUpdate').hidden = false;
-	//put all data to text box
-	document.getElementById('natureList').value= data[currRow].nature;
-	document.getElementById('catList').value= data[currRow].category;
-	document.getElementById('subCatList').value = data[currRow].subCategory;
-	document.getElementById('vendorName').value= data[currRow].vendorName;
-	document.getElementById('firmName').value = data[currRow].firmName;
-	document.getElementById('custName').value = data[currRow].custName;
-	document.getElementById('address').value= data[currRow].address;
-	document.getElementById('mobile').value= data[currRow].mobile;
-}
-function clearData(){
-	document.getElementById('vendorName').value= "";
-	document.getElementById('firmName').value = "";
-	document.getElementById('custName').value = "";
-	document.getElementById('address').value= "";
-	document.getElementById('mobile').value= "";
-}
-function cancelUpdate(){
-	currRow= undefined;
-	document.getElementById('submit').hidden = false;
-	document.getElementById('update').hidden = true;
-	document.getElementById('cancelUpdate').hidden = true;
-	clearData();
-}
-function update(){
-	var data = JSON.parse(localStorage.getItem('business'));
-	if(data[currRow]["_id"]){
-		data[currRow]["unsync"] = true;
-	}
-	data[currRow].nature=document.getElementById('natureList').value;
-  data[currRow].category=document.getElementById('catList').value;
-  data[currRow].subCategory=document.getElementById('subCatList').value;
-  data[currRow].vendorName=document.getElementById('vendorName').value;
-  data[currRow].firmName=document.getElementById('firmName').value;
-  data[currRow].custName=document.getElementById('custName').value;
-  data[currRow].address=document.getElementById('address').value;
-  data[currRow].mobile=document.getElementById('mobile').value;
-	localStorage.setItem('business',JSON.stringify(data));
-	clearData();
-	renderPage();
-	sync();
 }
 function deleteRow(i){
     var flag = confirm("Are you sure, you want to delete row "+(i+1));
@@ -253,16 +235,20 @@ function deleteRow(i){
 }
 function submit(){
   var obj = {
+    country:document.getElementById('countryList').value,
+    state:document.getElementById('stateList').value,
     nature:document.getElementById('natureList').value,
     category:document.getElementById('catList').value,
     subCategory:document.getElementById('subCatList').value,
-    vendorName:document.getElementById('vendorName').value,
     firmName:document.getElementById('firmName').value,
+    vendorName:document.getElementById('vendorName').value,
     custName:document.getElementById('custName').value,
     address:document.getElementById('address').value,
-    mobile:document.getElementById('mobile').value
+    mobile:document.getElementById('mobile').value,
+    email:document.getElementById('email').value,
+    whatsapp:document.getElementById('whatsapp').value,
+    website:document.getElementById('website').value
   };
-	clearData();
   saveLocalStorage(obj);
 }
 var catArray = data.category.map(function(e){
@@ -271,5 +257,30 @@ var catArray = data.category.map(function(e){
 fillData('natureList',data.nature);
 fillData('catList',catArray);
 fillData('subCatList',data.category[0].sub);
+getAllCountry(function(err,result){
+  if(err) throw err;
+  countries = JSON.parse(JSON.stringify(result));
+  let IndiaIndex = result.findIndex(e=>{
+    if(e.name="India") {
+      return true;
+    }
+  });
+  console.log(result);
+  fillData('countryList',result.map(e=>e.name));
+  document.getElementById("countryList").selectedIndex = IndiaIndex;
+  countryChange();
+});
+function countryChange(){
+  var value = document.getElementById('countryList').value;
+  var category = countries.find(function(e){
+    if(e.name==value){
+      return true;
+    }
+  });
+  getStateOfCountry(category.code,function(err,result){
+    if(err) throw err;
+    fillData('stateList',result);
+  })
+}
 sync();
 renderPage();
